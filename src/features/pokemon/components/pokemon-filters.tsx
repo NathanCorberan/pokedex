@@ -1,13 +1,17 @@
-"use client"
+"use client" // Utile dans certains frameworks comme Next.js pour signaler que ce composant s’exécute côté client
 
 import { useEffect, useState } from "react"
+// Composants d’UI (bouton, badge, select, carte…)
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// Icônes (Lucide)
 import { Filter, X } from "lucide-react"
+// Hook custom pour charger la liste complète des types de Pokémon
 import { useAllTypes } from "@/hooks/pokemon/useAllTypes"
 
+// Les props que le composant attend : les filtres actifs et les callbacks pour les changer
 interface PokemonFiltersProps {
   selectedType: string
   selectedGeneration: string
@@ -15,6 +19,7 @@ interface PokemonFiltersProps {
   onGenerationChange: (generation: string) => void
 }
 
+// Liste des générations connues (avec label UX et valeur utilisée pour le filtre)
 const generations = [
   { value: "1", label: "Génération I (Kanto)" },
   { value: "2", label: "Génération II (Johto)" },
@@ -27,30 +32,37 @@ const generations = [
   { value: "9", label: "Génération IX (Paldea)" },
 ]
 
+// Composant principal des filtres
 export function PokemonFilters({
   selectedType,
   selectedGeneration,
   onTypeChange,
   onGenerationChange,
 }: PokemonFiltersProps) {
+  // On charge tous les types depuis l’API (hook custom)
   const { types, loading: typesLoading } = useAllTypes()
+  // Etat local : liste des types les plus populaires (affichage en shortcut)
   const [popularTypes, setPopularTypes] = useState<string[]>([])
 
+  // Quand la liste des types change, on définit les types populaires disponibles
   useEffect(() => {
-    // Définir les types populaires basés sur l'API
     if (types.length > 0) {
       const popular = ["Feu", "Eau", "Plante", "Électrik", "Psy", "Dragon"]
+      // On ne garde que ceux effectivement existants dans la data chargée
       setPopularTypes(popular.filter((type) => types.some((apiType) => apiType.name === type)))
     }
   }, [types])
 
+  // Fonction utilitaire pour réinitialiser tous les filtres
   const clearFilters = () => {
     onTypeChange("")
     onGenerationChange("")
   }
 
+  // Un booléen pour savoir si un filtre est actif
   const hasActiveFilters = selectedType || selectedGeneration
 
+  // --- RENDU PRINCIPAL ---
   return (
     <Card className="mb-8">
       <CardHeader>
@@ -59,6 +71,7 @@ export function PokemonFilters({
             <Filter className="h-5 w-5" />
             Filtres
           </CardTitle>
+          {/* Bouton “Effacer” visible seulement si un filtre est actif */}
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters}>
               <X className="h-4 w-4 mr-1" />
@@ -69,7 +82,7 @@ export function PokemonFilters({
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Active Filters */}
+        {/* Affichage des filtres actifs en mode badge (avec croix pour enlever individuellement) */}
         {hasActiveFilters && (
           <div className="flex flex-wrap gap-2">
             {selectedType && (
@@ -101,8 +114,9 @@ export function PokemonFilters({
           </div>
         )}
 
+        {/* Grille responsive : filtre par type à gauche, par génération à droite */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Type Filter */}
+          {/* Filtre par type */}
           <div>
             <label className="text-sm font-medium mb-3 block">Type</label>
             <Select value={selectedType} onValueChange={onTypeChange}>
@@ -111,6 +125,7 @@ export function PokemonFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les types</SelectItem>
+                {/* Liste dynamique de tous les types disponibles */}
                 {types.map((type) => (
                   <SelectItem key={type.id} value={type.name}>
                     {type.name}
@@ -120,7 +135,7 @@ export function PokemonFilters({
             </Select>
           </div>
 
-          {/* Generation Filter */}
+          {/* Filtre par génération */}
           <div>
             <label className="text-sm font-medium mb-3 block">Génération</label>
             <Select value={selectedGeneration} onValueChange={onGenerationChange}>
@@ -129,6 +144,7 @@ export function PokemonFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les générations</SelectItem>
+                {/* Liste statique des générations */}
                 {generations.map((gen) => (
                   <SelectItem key={gen.value} value={gen.value}>
                     {gen.label}
@@ -139,7 +155,7 @@ export function PokemonFilters({
           </div>
         </div>
 
-        {/* Quick Type Filters */}
+        {/* Raccourcis vers les types populaires sous forme de boutons */}
         {!typesLoading && popularTypes.length > 0 && (
           <div>
             <label className="text-sm font-medium mb-3 block">Types populaires</label>

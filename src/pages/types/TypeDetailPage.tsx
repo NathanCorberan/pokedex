@@ -1,11 +1,13 @@
+// --- IMPORTS PRINCIPAUX ---
 import { useState } from "react"
-import { useParams, Link } from "react-router-dom"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Loader2, ArrowLeft, Filter } from "lucide-react"
-import { PokemonCard } from "@/features/pokemon/components/pokemon-card"
-import { usePokemonByType } from "@/hooks/pokemon/usePokemonByType"
+import { useParams, Link } from "react-router-dom" // Pour récupérer l'URL (param type) et les liens de navigation
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card" // UI composant carte
+import { Button } from "@/components/ui/button" // Bouton réutilisable
+import { Loader2, ArrowLeft, Filter } from "lucide-react" // Icônes SVG
+import { PokemonCard } from "@/features/pokemon/components/pokemon-card" // Carte individuelle de Pokémon
+import { usePokemonByType } from "@/hooks/pokemon/usePokemonByType" // Hook custom pour récupérer les Pokémon d'un type donné
 
+// --- COULEURS PAR TYPE, POUR LA MINI-ILLUSTRATION EN EN-TÊTE ---
 const typeColors: Record<string, string> = {
   Feu: "from-red-400 to-red-600",
   Eau: "from-blue-400 to-blue-600",
@@ -27,24 +29,34 @@ const typeColors: Record<string, string> = {
   Ténèbres: "from-gray-700 to-gray-900",
 }
 
+// --- COMPOSANT PRINCIPAL ---
 export function TypeDetailPage() {
+  // Récupère le paramètre dynamique 'typeName' de l'URL (ex: /types/Feu → typeName="Feu")
   const { typeName } = useParams<{ typeName: string }>()
+  // Utilise un hook custom pour charger tous les Pokémon de ce type
   const { pokemon, loading, error } = usePokemonByType(typeName ?? "")
+
+  // État local pour le critère de tri choisi
   const [sortBy, setSortBy] = useState<"id" | "name" | "stats">("id")
 
+  // --- TRI DES POKÉMONS SELON LE CRITÈRE SÉLECTIONNÉ ---
   const sortedPokemon = [...pokemon].sort((a, b) => {
     switch (sortBy) {
       case "name":
+        // Tri alphabétique sur le nom
         return a.name.localeCompare(b.name)
       case "stats":
+        // Tri décroissant sur le total des stats
         const totalA = Object.values(a.stats).reduce((sum, stat) => sum + stat, 0)
         const totalB = Object.values(b.stats).reduce((sum, stat) => sum + stat, 0)
         return totalB - totalA
       default:
+        // Tri croissant par numéro Pokédex
         return a.pokedexId - b.pokedexId
     }
   })
 
+  // --- ÉTAT DE CHARGEMENT ---
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -54,6 +66,7 @@ export function TypeDetailPage() {
     )
   }
 
+  // --- AFFICHAGE EN CAS D'ERREUR ---
   if (error) {
     return (
       <div className="text-center py-12">
@@ -63,10 +76,12 @@ export function TypeDetailPage() {
     )
   }
 
+  // --- RENDU PRINCIPAL ---
   return (
     <main className="container mx-auto px-4 py-8">
-      {/* Header */}
+      {/* -------- HEADER DE LA PAGE -------- */}
       <section className="mb-8">
+        {/* Bouton retour vers la liste des types */}
         <Link to="/types">
           <Button variant="ghost" className="mb-4">
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -74,12 +89,14 @@ export function TypeDetailPage() {
           </Button>
         </Link>
 
+        {/* Mini-bloc d'en-tête avec couleur, initiale, titre et sous-titre */}
         <div className="flex items-center gap-4 mb-6">
           <div
             className={`w-16 h-16 rounded-full bg-gradient-to-br ${
               typeColors[typeName || ""] || "from-gray-400 to-gray-600"
             } flex items-center justify-center`}
           >
+            {/* Première lettre du nom du type, stylisée */}
             <span className="text-2xl font-bold text-white">{typeName?.charAt(0)}</span>
           </div>
           <div>
@@ -91,8 +108,9 @@ export function TypeDetailPage() {
         </div>
       </section>
 
-      {/* Stats */}
+      {/* -------- STATISTIQUES RÉSUMÉES SUR LE TYPE -------- */}
       <section className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        {/* Nombre total de Pokémon de ce type */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Total</CardTitle>
@@ -102,6 +120,7 @@ export function TypeDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Nombre de générations représentées */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Générations</CardTitle>
@@ -113,6 +132,7 @@ export function TypeDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Statistiques moyennes des Pokémon de ce type */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Stats moy.</CardTitle>
@@ -129,6 +149,7 @@ export function TypeDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Valeur maximale des stats totales d'un Pokémon de ce type */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Plus fort</CardTitle>
@@ -143,7 +164,7 @@ export function TypeDetailPage() {
         </Card>
       </section>
 
-      {/* Filtres */}
+      {/* -------- BOUTONS DE TRI -------- */}
       <section className="mb-8">
         <Card>
           <CardHeader>
@@ -168,13 +189,15 @@ export function TypeDetailPage() {
         </Card>
       </section>
 
-      {/* Pokémon Grid */}
+      {/* -------- GRILLE DE POKÉMONS -------- */}
       <section>
         {sortedPokemon.length === 0 ? (
+          // Aucun Pokémon trouvé pour ce type
           <div className="text-center py-12">
             <p className="text-muted-foreground">Aucun Pokémon trouvé pour ce type.</p>
           </div>
         ) : (
+          // Affiche la grille des Pokémon du type
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {sortedPokemon.map((p) => (
               <PokemonCard key={p.id} pokemon={p} />
